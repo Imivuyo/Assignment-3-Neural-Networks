@@ -27,6 +27,8 @@ def find_optimal_hidden_units(dataset_name):
     
     algorithms = ['sgd', 'scg', 'leapfrog']
     results = []
+
+    np.random.seed(CONFIG['random_seed'])
     
     for hidden_units in CONFIG['hidden_units_to_test']:
         print(f"\nTesting {hidden_units} hidden units...")
@@ -34,11 +36,7 @@ def find_optimal_hidden_units(dataset_name):
         algo_val_losses = {algo: [] for algo in algorithms}
         
         for algo in algorithms:
-            for run in range(8):
-                np.random.seed(CONFIG['random_seed'] + run)
-                tf.random.set_seed(CONFIG['random_seed'] + run)
-                random.seed(CONFIG['random_seed'] + run)
-                
+            for run in range(8):       
                 model = FeedforwardNN(input_dim, hidden_units, output_dim, problem_type)
                 
                 if algo == 'sgd':
@@ -89,94 +87,72 @@ def hyperparameter_search(dataset_name, algorithm, hidden_units):
     best_val_loss = float('inf')
     results = []
     
-    for run in range(10):
-        np.random.seed(CONFIG['random_seed'] + run)
-        tf.random.set_seed(CONFIG['random_seed'] + run)
-        random.seed(CONFIG['random_seed'] + run)
+    np.random.seed(CONFIG['random_seed'])
     
-        if algorithm == 'sgd':
-            param_grid = CONFIG['sgd_params']
-            for lr in param_grid['learning_rate']:
-                for mom in param_grid['momentum']:
-                    print(f"Testing lr={lr}, momentum={mom}")
-                    
-                    val_losses = []
-                    for _ in range(10):
-                        model = FeedforwardNN(input_dim, hidden_units, output_dim, problem_type)
-                        trainer = SGDTrainer(learning_rate=lr, momentum=mom)
-                        history = trainer.train(model, X_train, y_train, X_val, y_val)
-                        assert 'val_loss_epochs' in history, "Missing val_loss_epochs in SGD history"
-                        val_losses.append(min(history['val_loss_epochs']) if history['val_loss_epochs'] else np.nan)
-                    
-                    mean_val_loss = np.nanmean(val_losses)
-                    std_val_loss = np.nanstd(val_losses)
-                    results.append({'lr': lr, 'momentum': mom, 'mean_val_loss': mean_val_loss, 'std_val_loss': std_val_loss})
-                    
-                    if mean_val_loss < best_val_loss:
-                        best_val_loss = mean_val_loss
-                        best_params = {'learning_rate': lr, 'momentum': mom}
-        
-        elif algorithm == 'scg':
-            param_grid = CONFIG['scg_params']
-            for sigma in param_grid['sigma']:
-                for lambda_ in param_grid['lambda_']:
-                    print(f"Testing sigma={sigma}, lambda_={lambda_}")
-                    
-                    val_losses = []
-                    for _ in range(10):
-                        model = FeedforwardNN(input_dim, hidden_units, output_dim, problem_type)
-                        trainer = SCGTrainer(sigma=sigma, lambda_=lambda_)
-                        history = trainer.train(model, X_train, y_train, X_val, y_val)
-                        assert 'val_loss_epochs' in history, "Missing val_loss_epochs in SCG history"
-                        val_losses.append(min(history['val_loss_epochs']) if history['val_loss_epochs'] else np.nan)
-                    
-                    mean_val_loss = np.nanmean(val_losses)
-                    std_val_loss = np.nanstd(val_losses)
-                    results.append({'sigma': sigma, 'lambda_': lambda_, 'mean_val_loss': mean_val_loss, 'std_val_loss': std_val_loss})
-                    
-                    if mean_val_loss < best_val_loss:
-                        best_val_loss = mean_val_loss
-                        best_params = {'sigma': sigma, 'lambda_': lambda_}
-        
-        elif algorithm == 'leapfrog':
-            param_grid = CONFIG['leapfrog_params']
-            for delta_t in param_grid['delta_t']:
-                for delta in param_grid['delta']:
-                    print(f"Testing delta_t={delta_t}, delta={delta} (other parameters fixed: m=3, delta_1=0.001, j=2, M=10, N_max=2, epsilon=1e-5)")
-                    
-                    val_losses = []
-                    for _ in range(10):
-                        model = FeedforwardNN(input_dim, hidden_units, output_dim, problem_type)
-                        trainer = LeapFrogTrainer(delta_t=delta_t, delta=delta, m=3, delta_1=0.001, j=2, M=10, N_max=2, epsilon=1e-5)
-                        history = trainer.train(model, X_train, y_train, X_val, y_val)
-                        assert 'val_loss_epochs' in history, "Missing val_loss_epochs in LeapFrog history"
-                        val_losses.append(min(history['val_loss_epochs']) if history['val_loss_epochs'] else np.nan)
-                    
-                    mean_val_loss = np.nanmean(val_losses)
-                    std_val_loss = np.nanstd(val_losses)
-                    results.append({
-                        'delta_t': delta_t,
-                        'delta': delta,
-                        'm': 3,
-                        'delta_1': 0.001,
-                        'j': 2,
-                        'M': 10,
-                        'N_max': 2,
-                        'mean_val_loss': mean_val_loss,
-                        'std_val_loss': std_val_loss
-                    })
-                    
-                    if mean_val_loss < best_val_loss:
-                        best_val_loss = mean_val_loss
-                        best_params = {
-                            'delta_t': delta_t,
-                            'delta': delta,
-                            'm': 3,
-                            'delta_1': 0.001,
-                            'j': 2,
-                            'M': 10,
-                            'N_max': 2
-                        }
+    if algorithm == 'sgd':
+        param_grid = CONFIG['sgd_params']
+        for lr in param_grid['learning_rate']:
+            for mom in param_grid['momentum']:
+                print(f"Testing lr={lr}, momentum={mom}")
+                
+                val_losses = []
+                for run in range(10):  # ← This should be the ONLY loop
+                    model = FeedforwardNN(input_dim, hidden_units, output_dim, problem_type)
+                    trainer = SGDTrainer(learning_rate=lr, momentum=mom)
+                    history = trainer.train(model, X_train, y_train, X_val, y_val)
+                    val_losses.append(min(history['val_loss_epochs']) if history['val_loss_epochs'] else np.nan)
+                
+                mean_val_loss = np.nanmean(val_losses)
+                std_val_loss = np.nanstd(val_losses)
+                results.append({'lr': lr, 'momentum': mom, 'mean_val_loss': mean_val_loss, 'std_val_loss': std_val_loss})
+                
+                if mean_val_loss < best_val_loss:
+                    best_val_loss = mean_val_loss
+                    best_params = {'learning_rate': lr, 'momentum': mom}
+    
+    elif algorithm == 'scg':
+        param_grid = CONFIG['scg_params']
+        for sigma in param_grid['sigma']:
+            for lambda_ in param_grid['lambda_']:
+                print(f"Testing sigma={sigma}, lambda_={lambda_}")
+                
+                val_losses = []
+                for run in range(10):
+                    model = FeedforwardNN(input_dim, hidden_units, output_dim, problem_type)
+                    trainer = SCGTrainer(sigma=sigma, lambda_=lambda_)
+                    history = trainer.train(model, X_train, y_train, X_val, y_val)
+                    val_losses.append(min(history['val_loss_epochs']) if history['val_loss_epochs'] else np.nan)
+                
+                mean_val_loss = np.nanmean(val_losses)
+                std_val_loss = np.nanstd(val_losses)
+                results.append({'sigma': sigma, 'lambda_': lambda_, 'mean_val_loss': mean_val_loss, 'std_val_loss': std_val_loss})
+                
+                if mean_val_loss < best_val_loss:
+                    best_val_loss = mean_val_loss
+                    best_params = {'sigma': sigma, 'lambda_': lambda_}
+    
+    elif algorithm == 'leapfrog':
+        param_grid = CONFIG['leapfrog_params']
+        for delta_t in param_grid['delta_t']:
+            for delta in param_grid['delta']:
+                print(f"Testing delta_t={delta_t}, delta={delta} (other parameters fixed)")
+                
+                val_losses = []
+                for run in range(10):
+                    model = FeedforwardNN(input_dim, hidden_units, output_dim, problem_type)
+                    trainer = LeapFrogTrainer(delta_t=delta_t, delta=delta, m=3, delta_1=0.001, j=2, M=10, N_max=2, epsilon=1e-5)
+                    history = trainer.train(model, X_train, y_train, X_val, y_val)
+                    val_losses.append(min(history['val_loss_epochs']) if history['val_loss_epochs'] else np.nan)
+                
+                mean_val_loss = np.nanmean(val_losses)
+                std_val_loss = np.nanstd(val_losses)
+                results.append({
+                    'delta_t': delta_t, 'delta': delta, 'mean_val_loss': mean_val_loss, 'std_val_loss': std_val_loss
+                })
+                
+                if mean_val_loss < best_val_loss:
+                    best_val_loss = mean_val_loss
+                    best_params = {'delta_t': delta_t, 'delta': delta, 'm': 3, 'delta_1': 0.001, 'j': 2, 'M': 10, 'N_max': 2}
     
     print(f"\n✓ Best parameters: {best_params} (mean loss {best_val_loss:.4f})")
     
@@ -232,6 +208,8 @@ def run_final_comparison(dataset_name, configs):
     
     all_results = []
     aggregated_curves = {}
+
+    np.random.seed(CONFIG['random_seed'])
     
     for algo_name, config in configs.items():
         print(f"\nRunning {algo_name.upper()}...")
@@ -244,10 +222,6 @@ def run_final_comparison(dataset_name, configs):
         for run in range(CONFIG['n_runs']):
             if run % 5 == 0:
                 print(f"  Run {run+1}/{CONFIG['n_runs']}")
-            
-            np.random.seed(CONFIG['random_seed'] + run)
-            tf.random.set_seed(CONFIG['random_seed'] + run)
-            random.seed(CONFIG['random_seed'] + run)
             
             start_time = time.time()
             model = FeedforwardNN(input_dim, hidden_units, output_dim, problem_type)

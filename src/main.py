@@ -18,7 +18,7 @@ ALL_DATASETS = ['mnist', 'fashion_mnist', 'wine', 'diabetes', 'california_housin
 DEBUG_MODE = True   # set to False when running the full pipeline
 
 if DEBUG_MODE:
-    datasets = ['mnist', 'wine']  # small test run
+    datasets = ['diabetes', 'wine']  # small test run
     print("DEBUG MODE ON: Running only on:", datasets)
 else:
     datasets = ALL_DATASETS
@@ -49,7 +49,7 @@ def tune_hyperparams(args):
     return dataset, algo, best_params
 
 best_hyperparams = {dataset: {} for dataset in datasets}
-with Pool(processes=4) as pool:  # Use your 4 cores
+with Pool(processes=10) as pool:  # Use your 4 cores
     results = pool.map(
         tune_hyperparams,
         [(dataset, algo, optimal_architectures[dataset])
@@ -79,7 +79,7 @@ def run_comparison(args):
     results_df = run_final_comparison(dataset, configs)
     return dataset, results_df, configs
 
-with Pool(processes=4) as pool:
+with Pool(processes=10) as pool:
     results = pool.map(
         run_comparison,
         [(dataset, {
