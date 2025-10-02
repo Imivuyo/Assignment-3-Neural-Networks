@@ -1,4 +1,5 @@
 import os
+import json
 import pandas as pd
 from multiprocessing import Pool
 from experiments import (
@@ -18,7 +19,7 @@ ALL_DATASETS = ['mnist', 'fashion_mnist', 'wine', 'diabetes', 'california_housin
 DEBUG_MODE = True   # set to False when running the full pipeline
 
 if DEBUG_MODE:
-    datasets = ['diabetes', 'wine']  # small test run
+    datasets = ['wine']  # small test run
     print("DEBUG MODE ON: Running only on:", datasets)
 else:
     datasets = ALL_DATASETS
@@ -44,9 +45,15 @@ print("\n✓ Optimal architectures saved to results/optimal_architectures.csv")
 # -------------------------------------------------------------------------
 def tune_hyperparams(args):
     dataset, algo, hidden_units = args
-    print(f"\nTuning hyperparameters for {algo} on {dataset}...")
-    best_params = hyperparameter_search(dataset, algo, hidden_units)
-    return dataset, algo, best_params
+    try:
+        print(f"\nTuning hyperparameters for {algo} on {dataset}...")
+        best_params = hyperparameter_search(dataset, algo, hidden_units)
+        return dataset, algo, best_params
+    except Exception as e:
+        print(f"ERROR in tune_hyperparams for {dataset}-{algo}: {e}")
+        import traceback
+        traceback.print_exc()
+        return dataset, algo, {}
 
 best_hyperparams = {dataset: {} for dataset in datasets}
 with Pool(processes=10) as pool:  # Use your 4 cores
@@ -76,9 +83,15 @@ print("\n✓ Best hyperparameters saved to results/best_hyperparameters.csv")
 # -------------------------------------------------------------------------
 def run_comparison(args):
     dataset, configs = args
-    # FIX: run_final_comparison returns (results_df, problem_type)
-    results_df, problem_type = run_final_comparison(dataset, configs)
-    return dataset, results_df, problem_type, configs
+    try:
+        results_df, problem_type = run_final_comparison(dataset, configs)
+        return dataset, results_df, problem_type, configs
+    except Exception as e:
+        print(f"ERROR in run_comparison for {dataset}: {e}")
+        import traceback
+        traceback.print_exc()
+        empty_df = pd.DataFrame()
+        return dataset, empty_df, 'unknown', configs
 
 with Pool(processes=10) as pool:
     results = pool.map(
