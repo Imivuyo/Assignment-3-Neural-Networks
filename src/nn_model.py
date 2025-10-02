@@ -91,3 +91,10 @@ class FeedforwardNN:
         self.W2 = flat_weights[idx:idx + w2_size].reshape(self.hidden_units, self.output_dim)
         idx += w2_size
         self.b2 = flat_weights[idx:]
+
+    def predict(self, X):
+        """Predict on new data"""
+        y_pred = self.forward(X, training=False)
+        if self.problem_type == 'classification':
+            return np.argmax(y_pred, axis=1)
+        return y_pred.flatten()

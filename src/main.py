@@ -76,8 +76,9 @@ print("\n✓ Best hyperparameters saved to results/best_hyperparameters.csv")
 # -------------------------------------------------------------------------
 def run_comparison(args):
     dataset, configs = args
-    results_df = run_final_comparison(dataset, configs)
-    return dataset, results_df, configs
+    # FIX: run_final_comparison returns (results_df, problem_type)
+    results_df, problem_type = run_final_comparison(dataset, configs)
+    return dataset, results_df, problem_type, configs
 
 with Pool(processes=10) as pool:
     results = pool.map(
@@ -93,11 +94,11 @@ with Pool(processes=10) as pool:
     )
 
 all_results = {}
-for dataset, results_df, configs in results:
+for dataset, results_df, problem_type, configs in results:
     all_results[dataset] = {
         'results_df': results_df,
         'configs': configs,
-        'problem_type': results_df['metric_name'].iloc[0]
+        'problem_type': problem_type  # Use the returned problem_type
     }
 
 # -------------------------------------------------------------------------
