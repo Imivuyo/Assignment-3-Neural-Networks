@@ -17,8 +17,7 @@ from trainers import SGDTrainer, SCGTrainer, LeapFrogTrainer
 
 def find_optimal_hidden_units(dataset_name):
     """Find optimal number of hidden units using SGD as baseline (faster computation)"""
-    # Justification: SGD provides reasonable architecture baseline while reducing computation time by 67%
-    # This approach follows common practice where architecture is selected with one algorithm then used for all
+
     print(f"\n{'='*70}")
     print(f"Finding optimal hidden units for {dataset_name} (SGD baseline only)")
     print(f"{'='*70}")
@@ -36,11 +35,9 @@ def find_optimal_hidden_units(dataset_name):
         
         val_losses = []
         
-        # Use 10 runs with SGD for reliable architecture selection
-        for run in range(10):  # Increased from 8 to 10 for better reliability
+        for run in range(10): 
             model = FeedforwardNN(input_dim, hidden_units, output_dim, problem_type)
             
-            # Use SGD with reasonable default parameters
             trainer = SGDTrainer(learning_rate=0.01, momentum=0.9)
             history = trainer.train(model, X_train, y_train, X_val, y_val)
             
@@ -66,9 +63,8 @@ def find_optimal_hidden_units(dataset_name):
     optimal_hidden_units = results_df.loc[optimal_idx, 'hidden_units']
     optimal_loss = results_df.loc[optimal_idx, 'mean_val_loss']
     
-    print(f"\n✓ Optimal hidden units: {optimal_hidden_units} (val loss: {optimal_loss:.4f})")
+    print(f"\n Optimal hidden units: {optimal_hidden_units} (val loss: {optimal_loss:.4f})")
     
-    # Save results with justification note
     results_df['method'] = 'SGD_baseline_architecture_selection'
     results_df.to_csv(f'results/{dataset_name}_hidden_units.csv', index=False)
     
@@ -98,7 +94,7 @@ def hyperparameter_search(dataset_name, algorithm, hidden_units):
                 print(f"Testing lr={lr}, momentum={mom}")
                 
                 val_losses = []
-                for run in range(10):  # ← This should be the ONLY loop
+                for run in range(10):
                     model = FeedforwardNN(input_dim, hidden_units, output_dim, problem_type)
                     trainer = SGDTrainer(learning_rate=lr, momentum=mom)
                     history = trainer.train(model, X_train, y_train, X_val, y_val)
@@ -156,7 +152,7 @@ def hyperparameter_search(dataset_name, algorithm, hidden_units):
                     best_val_loss = mean_val_loss
                     best_params = {'delta_t': delta_t, 'delta': delta, 'm': 3, 'delta_1': 0.001, 'j': 2, 'M': 10, 'N_max': 2}
     
-    print(f"\n✓ Best parameters: {best_params} (mean loss {best_val_loss:.4f})")
+    print(f"\n Best parameters: {best_params} (mean loss {best_val_loss:.4f})")
     
     return best_params
 
@@ -169,16 +165,6 @@ def run_final_comparison(dataset_name, configs):
     print(f"{'='*70}")
     
     X_train, X_val, X_test, y_train, y_val, y_test, problem_type = load_and_preprocess_data(dataset_name)
-    
-    preprocessing_details = {
-        'california_housing': 'RobustScaler (features and target) due to extreme outliers (e.g., AveOccup max=1,243 vs. median=2.8) and censored target ($500,001 cap)',
-        'diabetes': 'StandardScaler (features and target) for consistency, as data is pre-standardized',
-        'fish_market': 'StandardScaler (numerical features), RobustScaler (target) due to right-skew (mean/median=1.46), one-hot encoding (species), removed one zero-weight error',
-        'mnist': 'StandardScaler (features), one-hot encoding (targets), stratified split',
-        'fashion_mnist': 'Pixel normalization ([0,255] to [0,1]), StandardScaler (features), one-hot encoding (targets), stratified split',
-        'wine': 'StandardScaler (features) due to extreme scale differences (e.g., proline range=1,402), one-hot encoding (targets), stratified split'
-    }
-    print(f"Preprocessing: {preprocessing_details.get(dataset_name, 'Unknown')}")
     
     target_skew = None
     outlier_ratio = None
@@ -335,7 +321,7 @@ def run_final_comparison(dataset_name, configs):
         run_dir = f'results/{dataset_name}_epoch_losses'
         os.makedirs(run_dir, exist_ok=True)
         agg_df.to_csv(f'{run_dir}/{algo_name}_aggregated.csv', index=False)
-        print(f"  ✓ Aggregated curves saved for {algo_name}")
+        print(f"   Aggregated curves saved for {algo_name}")
     
     results_df = pd.DataFrame(all_results)
     if results_df.empty:

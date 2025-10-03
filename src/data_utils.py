@@ -24,9 +24,8 @@ def load_and_preprocess_data(dataset_name):
     """
     np.random.seed(CONFIG['random_seed'])
     
-    # -------------------
     # Load dataset
-    # -------------------
+
     if dataset_name == 'mnist':
         data = load_digits()
         X, y = data.data, data.target
@@ -40,7 +39,6 @@ def load_and_preprocess_data(dataset_name):
     elif dataset_name == 'fashion_mnist':
         (X_train_full, y_train_full), (X_test_full, y_test_full) = fashion_mnist.load_data()
 
-        # Use original split to avoid leakage
         X_train_full = X_train_full.reshape(-1, 28*28).astype('float32') / 255.0
         X_test_full = X_test_full.reshape(-1, 28*28).astype('float32') / 255.0
 
@@ -70,8 +68,6 @@ def load_and_preprocess_data(dataset_name):
     elif dataset_name == 'diabetes':
         data = load_diabetes()
 
-        # Data is already standardized by sklearn, but we apply StandardScaler 
-        # for consistency with other datasets and to ensure zero mean/unit variance
         X = StandardScaler().fit_transform(data.data)
         y = StandardScaler().fit_transform(data.target.reshape(-1, 1))
         problem_type = 'regression'
@@ -110,12 +106,7 @@ def load_and_preprocess_data(dataset_name):
     else:
         raise ValueError(f"Unknown dataset: {dataset_name}")
 
-    # -------------------
-    # Split dataset
-    # -------------------
-    # 70/15/15 train/val/test
     if problem_type == 'classification':
-        # Stratified split for classification to handle imbalance
         X_temp, X_test, y_temp, y_test = train_test_split(
             X, y, test_size=0.15, random_state=CONFIG['random_seed'], stratify=np.argmax(y, axis=1) if y.ndim > 1 else y
         )
@@ -123,7 +114,6 @@ def load_and_preprocess_data(dataset_name):
             X_temp, y_temp, test_size=0.176, random_state=CONFIG['random_seed'], stratify=np.argmax(y_temp, axis=1) if y_temp.ndim > 1 else y_temp
         )
     else:
-        # Standard split for regression
         X_temp, X_test, y_temp, y_test = train_test_split(
             X, y, test_size=0.15, random_state=CONFIG['random_seed']
         )
@@ -131,9 +121,6 @@ def load_and_preprocess_data(dataset_name):
             X_temp, y_temp, test_size=0.176, random_state=CONFIG['random_seed']
         )
 
-    # -------------------
-    # Print dataset statistics
-    # -------------------
     print(f"\nDataset: {dataset_name}")
     print(f"Problem type: {problem_type}")
     print(f"X_train shape: {X_train.shape}, y_train shape: {y_train.shape}")
