@@ -16,7 +16,7 @@ from experiments import (
 ALL_DATASETS = ['mnist', 'fashion_mnist', 'wine', 'diabetes', 'california_housing', 'fish_market']
 
 # Toggle here:
-DEBUG_MODE = True   # set to False when running the full pipeline
+DEBUG_MODE = False   # set to False when running the full pipeline
 
 if DEBUG_MODE:
     datasets = ['wine']  # small test run
